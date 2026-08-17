@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 | 박태수 내신영어 Signature 백지테스트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="brand-kr">박태수영어</div>
+  <div class="brand-en">PARK TAESU ENGLISH</div>
+  <div class="brand-org">대치명인은평 · 현시선학원 · 관리자</div>
+  <p class="tagline">지문을 등록하면 해당 학교 학생들이 접속해 바로 테스트를 볼 수 있습니다.</p>
+
+  <!-- ===================== LOGIN SCREEN ===================== -->
+  <div id="login-screen" class="card">
+    <h1 class="screen-title">관리자 로그인</h1>
+    <p class="screen-desc">교사 계정으로 로그인하세요.</p>
+    <div class="field">
+      <label class="field-label">이메일</label>
+      <input type="email" id="loginEmail" autocomplete="username">
+    </div>
+    <div class="field">
+      <label class="field-label">비밀번호</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
+    </div>
+    <p id="configMissingNote" class="hidden" style="font-size:12.5px; color:var(--error); margin:0 0 8px;">js/config.js에 Supabase 접속 정보가 기입되지 않았습니다. docs/DEPLOY.md를 참고하세요.</p>
+    <div class="actions">
+      <button class="btn btn-primary btn-block" id="loginBtn">로그인</button>
+    </div>
+  </div>
+
+  <!-- ===================== TABS ===================== -->
+  <div id="adminTabs" class="tabs hidden">
+    <button class="tab-btn active" data-tab="setup-screen">지문 관리</button>
+    <button class="tab-btn" data-tab="dashboard-screen">제출 현황</button>
+    <button class="tab-btn" data-tab="settings-screen">설정</button>
+  </div>
+
+  <!-- ===================== SETUP (지문 관리) SCREEN ===================== -->
+  <div id="setup-screen" class="card hidden">
+    <h1 class="screen-title">지문 등록</h1>
+    <p class="screen-desc">영어 지문을 붙여넣고 대상 학교를 지정해 저장하세요. 미리보기로 시험지를 PDF 인쇄할 수도 있습니다.</p>
+
+    <div class="row2">
+      <div class="field">
+        <label class="field-label">대상 학교</label>
+        <input type="text" id="schoolInput" list="schoolDatalist" placeholder="예: 배명고">
+        <datalist id="schoolDatalist"></datalist>
+      </div>
+      <div class="field">
+        <label class="field-label">카테고리 (선택)</label>
+        <input type="text" id="categoryInput" list="categoryDatalist" placeholder="예: 2학기 기말">
+        <datalist id="categoryDatalist"></datalist>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">지문 출처 (선택)</label>
+      <input type="text" id="sourceInput" placeholder="예: 2025_09_고2_서울시교육청_20번">
+    </div>
+
+    <div class="field">
+      <label class="field-label">영어 지문</label>
+      <textarea id="passageInput" placeholder="여기에 영어 지문을 붙여넣으세요..."></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">한글 해석 <span style="font-weight:400;color:var(--muted);">(문장마다 줄바꿈하여 입력 · 문장 수와 줄 수를 맞춰주세요 · 선택)</span></label>
+      <textarea id="translationInput" style="min-height:140px;" placeholder="문장 순서대로 한 줄씩 입력하세요..."></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">난이도 선택</label>
+      <div class="pills" id="difficultyPills">
+        <label class="pill active" data-level="basic">
+          <input type="radio" name="difficulty" value="basic" checked>
+          <div class="pill-title">기본</div>
+          <div class="pill-range">빈칸 약 15–20%</div>
+        </label>
+        <label class="pill" data-level="advanced">
+          <input type="radio" name="difficulty" value="advanced">
+          <div class="pill-title">심화</div>
+          <div class="pill-range">빈칸 약 40%</div>
+        </label>
+        <label class="pill" data-level="full">
+          <input type="radio" name="difficulty" value="full">
+          <div class="pill-title">통암기</div>
+          <div class="pill-range">관사 등 제외 전부 빈칸</div>
+        </label>
+      </div>
+    </div>
+
+    <div class="field" style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" id="hintToggle" style="width:16px;height:16px;">
+      <label for="hintToggle" style="font-size:13px; color:var(--muted); cursor:pointer;">미리보기 빈칸에 첫 글자 힌트 표시</label>
+    </div>
+
+    <div class="actions" style="margin-top:0;">
+      <button class="btn btn-primary" id="savePassageBtn">＋ 지문 저장</button>
+      <button class="btn btn-ghost" id="clearFormBtn">새로 작성</button>
+      <button class="btn btn-gold" id="previewBtn">테스트 미리보기 →</button>
+    </div>
+
+    <div class="field" id="libraryBox" style="border:1.5px solid var(--line); border-radius:12px; padding:18px 18px 14px; background:#FCFDFE; margin-top:26px; margin-bottom:0;">
+      <label class="field-label" style="margin-bottom:12px;">지문 보관함</label>
+      <div class="row2" style="margin-bottom:12px;">
+        <select id="schoolFilter" class="select"><option value="__all__">전체 학교</option></select>
+        <select id="categoryFilter" class="select"><option value="__all__">전체 카테고리</option></select>
+      </div>
+      <div id="savedList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD SCREEN ===================== -->
+  <div id="dashboard-screen" class="card hidden">
+    <h1 class="screen-title">학생 제출 현황</h1>
+    <p class="screen-desc">학생들이 제출한 테스트 결과가 여기에 모입니다.</p>
+
+    <div class="row2" style="align-items:end; margin-bottom:16px;">
+      <div>
+        <label class="field-label" style="font-size:12px;">학교 필터</label>
+        <select id="dashSchoolFilter" class="select"><option value="__all__">전체</option></select>
+      </div>
+      <div>
+        <label class="field-label" style="font-size:12px;">지문 출처 필터</label>
+        <select id="dashSourceFilter" class="select"><option value="__all__">전체</option></select>
+      </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <button class="btn btn-ghost" id="refreshDashboardBtn" style="width:100%;">↻ 새로고침</button>
+    </div>
+
+    <div id="dashboardSummary" style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;"></div>
+    <div id="dashboardList" style="display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+
+  <!-- ===================== SETTINGS SCREEN ===================== -->
+  <div id="settings-screen" class="card hidden">
+    <h1 class="screen-title">설정</h1>
+    <p class="screen-desc">학생들이 입장할 때 쓰는 공통 비밀번호를 변경합니다. 변경 즉시 이전 비밀번호는 쓸 수 없게 됩니다.</p>
+    <div class="field">
+      <label class="field-label">새 학생 공통 비밀번호</label>
+      <input type="text" id="newStudentPassword" placeholder="예: axis2026">
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="changePasswordBtn">비밀번호 변경</button>
+      <button class="btn btn-ghost" id="logoutBtn">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- ===================== TEST SCREEN (미리보기) ===================== -->
+  <div id="test-screen" class="card hidden">
+    <div class="print-only print-header" id="printHeaderTest">
+      <div>
+        <div class="ph-title">박태수 내신영어 Signature 백지테스트</div>
+        <div class="ph-org">대치명인은평 · 현시선학원</div>
+      </div>
+      <div class="ph-meta">
+        <div>지문 출처: <span id="phSourceTest">-</span></div>
+        <div>이름: <span class="fillline" id="phStudentTest">&nbsp;</span> 날짜: <span class="fillline" id="phDateTest">&nbsp;</span></div>
+        <div>난이도: <span id="phLevelTest">-</span></div>
+      </div>
+    </div>
+
+    <div class="exam-header">
+      <div class="exam-meta">
+        <div><b>지문 출처</b> <span id="metaSource">-</span></div>
+        <div><b>응시자</b> <span id="metaStudent">-</span></div>
+      </div>
+      <div class="timer" id="timerDisplay">00:00</div>
+    </div>
+
+    <div class="axis-track" id="axisTrack">
+      <div class="axis-label">0</div>
+      <div class="axis-label end" id="axisTotalLabel">0</div>
+      <div class="axis-line"></div>
+      <div class="axis-fill" id="axisFill"></div>
+    </div>
+
+    <div class="passage-box" id="passageBox"></div>
+    <p class="hint-note" id="hintNote">미리보기 화면입니다. 이 상태 그대로 PDF로 저장해 시험지로 쓸 수 있습니다.</p>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="backToSetupBtn">← 지문 관리로</button>
+      <button class="btn btn-ghost" id="pdfTestBtn">PDF로 저장</button>
+      <button class="btn btn-gold" id="submitBtn">채점하기</button>
+    </div>
+  </div>
+
+  <!-- ===================== RESULT SCREEN (미리보기 채점) ===================== -->
+  <div id="result-screen" class="card hidden">
+    <div class="print-only print-header" id="printHeaderResult">
+      <div>
+        <div class="ph-title">박태수 내신영어 Signature 백지테스트 · 채점결과</div>
+        <div class="ph-org">대치명인은평 · 현시선학원</div>
+      </div>
+      <div class="ph-meta">
+        <div>지문 출처: <span id="phSourceResult">-</span></div>
+        <div>이름: <span class="fillline" id="phStudentResult">&nbsp;</span> 날짜: <span class="fillline" id="phDateResult">&nbsp;</span></div>
+        <div>난이도: <span id="phLevelResult">-</span></div>
+      </div>
+    </div>
+
+    <div class="score-hero">
+      <div class="score-num" id="scoreNum">0<span>/ 0</span></div>
+      <div class="score-sub" id="scoreSub">정답률 0% · 소요 시간 00:00</div>
+    </div>
+    <label class="field-label" style="margin-bottom:10px; display:block;">전체 지문 (채점 결과)</label>
+    <label class="field-label" id="reviewListLabel" style="margin:22px 0 10px; display:block;">빈칸별 정답 확인</label>
+    <div class="review-list" id="reviewList"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="retryBtn">↺ 같은 지문 다시 풀기</button>
+      <button class="btn btn-primary" id="backToSetupBtn2">지문 관리로</button>
+    </div>
+  </div>
+
+  <p class="footer-note">대치명인은평 · 현시선학원 · 박태수T · 관리자 페이지</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/test-engine.js"></script>
+<script src="../js/admin.js"></script>
+</body>
+</html>
